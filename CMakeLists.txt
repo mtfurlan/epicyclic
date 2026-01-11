@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 3.13)
 
 set(PICO_SDK_FETCH_FROM_GIT on)
-include(pico_sdk_import.cmake)
+include(tools/pico_sdk_import.cmake)
 
-project(csrf-test)
+project(epicyclic)
 
 set(CMAKE_C_STANDARD 17)
 set(CMAKE_CXX_STANDARD 17)
@@ -13,18 +13,18 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS true)
 
 pico_sdk_init()
 
-add_executable(csrf-test)
+add_executable(epicyclic)
 
-target_sources(csrf-test PUBLIC
+target_sources(epicyclic PUBLIC
         src/main.cpp
         )
 
 
 
 
-pico_enable_stdio_usb(csrf-test 1)
-pico_enable_stdio_uart(csrf-test 1)
+pico_enable_stdio_usb(epicyclic 1)
+pico_enable_stdio_uart(epicyclic 1)
 
-pico_add_extra_outputs(csrf-test)
+pico_add_extra_outputs(epicyclic)
 
-target_link_libraries(csrf-test PUBLIC pico_stdlib)
+target_link_libraries(epicyclic PUBLIC pico_stdlib)

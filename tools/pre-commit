@@ -6,7 +6,7 @@ scriptPath=$(realpath "${BASH_SOURCE[0]}")
 hookType=pre-commit
 repoRoot="$(dirname "$scriptPath")"
 hooksDir=$(git -C "$repoRoot" rev-parse --path-format=absolute --git-path hooks)
-if [[ ! -e "$hooksDir/pre-commit" ]]; then
+if [[ ! -h "$hooksDir/pre-commit" ]]; then
     ln -s "$(realpath --relative-to "$hooksDir" "$scriptPath")"  "$hooksDir/$hookType"
 fi
 

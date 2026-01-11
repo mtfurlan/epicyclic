@@ -27,15 +27,15 @@ compile: ${BINARY} ## actually build the project, build target just runs cmake -
 
 .PHONY: flash
 flash: ${BINARY} ## flash with picotool
-	./flash.sh $<
+	./tools/flash.sh $<
 
 .PHONY: flash-prog
 flash-prog: ${BINARY} ## flash with a programmer
-	./flash.sh --programmer $<
+	./tools/flash.sh --programmer $<
 
 .PHONY: debug
 debug: ${BINARY} ## debug with a programmer
-	./debug.sh $<
+	./tools/debug.sh $<
 
 .PHONY: clean
 clean: ## remove build dir

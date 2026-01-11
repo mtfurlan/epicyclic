@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-cd "$DIR" &>/dev/null
+cd "$DIR/../" &>/dev/null
 
 # shellcheck disable=SC2120
 h () {
