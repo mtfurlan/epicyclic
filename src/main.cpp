@@ -1,15 +1,15 @@
-#include <stdio.h>
-#include "pico/stdlib.h"
 #include "hardware/gpio.h"
 #include "pico/binary_info.h"
+#include "pico/stdlib.h"
+#include <stdio.h>
 
 #define LED_R 18
 #define LED_G 19
 #define LED_B 20
 
 
-int main() {
-
+int main()
+{
     bi_decl(bi_program_description("This is a test binary."));
 
     stdio_init_all();
@@ -20,7 +20,6 @@ int main() {
     gpio_set_dir(LED_G, GPIO_OUT);
     gpio_init(LED_B);
     gpio_set_dir(LED_B, GPIO_OUT);
-
 
 
     while (1) {
