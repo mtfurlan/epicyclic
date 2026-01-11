@@ -39,4 +39,8 @@ debug: ${BINARY} ## debug with a programmer
 
 .PHONY: clean
 clean: ## remove build dir
+	cmake --build ${BUILD_DIR} --target clean
+
+.PHONY: clean-harder
+clean-harder: ## remove build dir; WARNING: will need to redownload pico sdk
 	rm -rf ${BUILD_DIR}
