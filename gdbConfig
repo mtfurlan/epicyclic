@@ -1,0 +1,17 @@
+define reload
+    if $_shell("cmake --build build")
+        echo The build failed\n
+    else
+        load
+        reboot
+    end
+end
+
+define reboot
+    monitor reset halt
+    monitor reset init
+    tbreak main
+    c
+end
+
+reboot

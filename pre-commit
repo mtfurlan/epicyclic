@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+set -ueo pipefail
+
+# when run, install hook even if run from another dir outside repo
+scriptPath=$(realpath "${BASH_SOURCE[0]}")
+hookType=pre-commit
+repoRoot="$(dirname "$scriptPath")"
+hooksDir=$(git -C "$repoRoot" rev-parse --path-format=absolute --git-path hooks)
+if [[ ! -e "$hooksDir/pre-commit" ]]; then
+    ln -s "$(realpath --relative-to "$hooksDir" "$scriptPath")"  "$hooksDir/$hookType"
+fi
+
+branch="$(git rev-parse --abbrev-ref HEAD)"
+
+if [ "$branch" = "develop" ]; then
+    echo "You can't commit directly to develop branch"
+    exit 1
+fi
+
+
+flags=()
+# if you don't want interactive, run
+# git config hooks.linterInteractive false
+if [ "$(git config --bool hooks.linterInteractive || true)" == false ]; then
+    flags+=("--non-interactive")
+fi
+
+"$repoRoot//lint.sh" "${flags[@]}"
