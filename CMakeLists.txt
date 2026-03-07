@@ -19,12 +19,14 @@ target_sources(epicyclic PUBLIC
         src/main.cpp
         )
 
-
-
-
 pico_enable_stdio_usb(epicyclic 1)
 pico_enable_stdio_uart(epicyclic 1)
 
 pico_add_extra_outputs(epicyclic)
 
 target_link_libraries(epicyclic PUBLIC pico_stdlib)
+
+
+
+add_subdirectory(lib/crsf)
+target_link_libraries(epicyclic PRIVATE crsf)

@@ -44,3 +44,8 @@ clean: ## remove build dir
 .PHONY: clean-harder
 clean-harder: ## remove build dir; WARNING: will need to redownload pico sdk
 	rm -rf ${BUILD_DIR}
+
+.PHONY: test
+test: ## run crsf lib tests TODO this is bad approach
+	cmake --build lib/crsf/build -t check
+	cmake --build lib/crsf/build -t check_mem
