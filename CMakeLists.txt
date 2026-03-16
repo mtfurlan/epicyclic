@@ -24,7 +24,7 @@ pico_enable_stdio_uart(epicyclic 1)
 
 pico_add_extra_outputs(epicyclic)
 
-target_link_libraries(epicyclic PUBLIC pico_stdlib)
+target_link_libraries(epicyclic PUBLIC pico_stdlib hardware_pwm)
 
 
 
