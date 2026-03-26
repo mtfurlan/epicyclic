@@ -30,17 +30,35 @@
 #define SCREEN_SET_LINE0_COL0 "\033[0;0H"
 
 
+static absolute_time_t connected_timeout;
+
 void cb(const crsf_packet_t* data)
 {
     switch (data->header.type) {
         case CSRF_FRAMETYPE_RC_CHANNELS_PACKED_PAYLOAD:
-            printf("setting CHAN1 to %d\n",
-                   CRSF_TICKS_TO_US(data->rc_channels_packed_payload.channel_1));
-            pwm_set_gpio_level(CHAN1,
-                               CRSF_TICKS_TO_US(data->rc_channels_packed_payload.channel_1));
+            connected_timeout = make_timeout_time_ms(100);
+            gpio_put(LED_G, 0);
+            if (CRSF_TICKS_TO_US(data->rc_channels_packed_payload.channel_5) > 1500) {
+                gpio_put(LED_B, 0);
+                printf("setting CHAN1 to %d\n",
+                       CRSF_TICKS_TO_US(data->rc_channels_packed_payload.channel_1));
+                pwm_set_gpio_level(CHAN1,
+                                   CRSF_TICKS_TO_US(data->rc_channels_packed_payload.channel_1));
+                pwm_set_gpio_level(CHAN2,
+                                   CRSF_TICKS_TO_US(data->rc_channels_packed_payload.channel_2));
+                pwm_set_gpio_level(CHAN3,
+                                   CRSF_TICKS_TO_US(data->rc_channels_packed_payload.channel_3));
+                pwm_set_gpio_level(CHAN4,
+                                   CRSF_TICKS_TO_US(data->rc_channels_packed_payload.channel_4));
+            } else {
+                gpio_put(LED_B, 1);
+                pwm_set_both_levels(2, 0, 0); // chan1, chan2
+                pwm_set_both_levels(3, 0, 0); // 3,4
+            }
+
             break;
         case CSRF_FRAMETYPE_LINK_STATISTICS:
-            print_packet(data, false);
+            //print_packet(data, false);
             break;
         default:
             break;
@@ -125,6 +143,13 @@ int main()
 
     while (1) {
         watchdog_update();
+        if (time_reached(connected_timeout)) {
+            // NO LONGER CONNECTED
+            pwm_set_both_levels(2, 0, 0); // chan1, chan2
+            pwm_set_both_levels(3, 0, 0); // 3,4
+            gpio_put(LED_G, 1);
+            gpio_put(LED_B, 1);
+        }
         if (uart_is_readable(uart0)) {
             uint8_t currentByte = uart_getc(uart0);
             crsf_process(&c, &currentByte, 1, cb);
