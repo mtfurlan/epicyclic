@@ -9,18 +9,18 @@
 
 #include <stdio.h>
 
-#define LED_R 18
-#define LED_G 19
-#define LED_B 20
+#define LED_R 17
+#define LED_G 16
+#define LED_B 25
 
 
 // each pwm slice drives 2 pwm channels
 // only B can be input
 // alterante, gpio0 is 0A, gpio1 is 0B, gpio2 is 1A, etc up to 15
-// same slices re-used for 16-29
-#define MOTOR_L 4 // slice 2A
-#define MOTOR_R 5 // slice 2B
-#define WEAPON  6 // slice 3A
+// code assumes motors are on the same slice, left is A right is B
+#define MOTOR_L 2 // slice 1A
+#define MOTOR_R 3 // slice 1B
+#define WEAPON  4 // slice 2A
 //#define CHAN4 7 // slice 3B
 
 #define CRSF_UART_TX 0
@@ -34,8 +34,8 @@ static absolute_time_t connected_timeout;
 
 void disarm()
 {
-    pwm_set_both_levels(2, 0, 0); // chan1, chan2
-    pwm_set_both_levels(3, 0, 0); // 3,4
+    pwm_set_gpio_level(WEAPON, 0);
+    pwm_set_both_levels(PWM_GPIO_SLICE_NUM(MOTOR_L), 0, 0);
     gpio_put(LED_B, 1);
 }
 
@@ -75,10 +75,10 @@ void doDriving(uint16_t forward_us, uint16_t turn_us, bool flip)
     }
 
     // TODO flip maybe invert both inputs?
-    //if(flip) {
-    //    left *= -1;
-    //    right *= -1;
-    //}
+    if (flip) {
+        left *= -1;
+        right *= -1;
+    }
 
     // left is wired backwards
     left *= -1;
@@ -92,7 +92,7 @@ void doDriving(uint16_t forward_us, uint16_t turn_us, bool flip)
     //printf("steering input drive: %d, rotat %d, max %d, total %d, diff %d\n", drive, rotate, maximum, total, difference);
     //printf("setting motors to L: %d, R: %d\n", left, right);
 
-    pwm_set_both_levels(2, left, right); // chan1 left, chan2 right
+    pwm_set_both_levels(pwm_gpio_to_slice_num(MOTOR_L), left, right);
 }
 void cb(const crsf_packet_t* data)
 {
@@ -144,9 +144,7 @@ int my_pwm_init()
     // clock = wrap * 50
     // wrap = clock/50
 
-    pwm_set_gpio_level(MOTOR_L, 0);
-    pwm_set_gpio_level(MOTOR_R, 0);
-    pwm_set_gpio_level(WEAPON, 0);
+    disarm();
 
 
     // scale pwm clock to 1MHz
@@ -156,12 +154,16 @@ int my_pwm_init()
     float divider = clock / pwmClk;
     uint32_t top = pwmClk / 50 - 1;
 
-    // we know that the inputs we picked are on slices 2 and 3
-    for (size_t slice = 2; slice <= 3; ++slice) {
-        pwm_set_clkdiv(slice, divider);
-        pwm_set_wrap(slice, top);
-        pwm_set_enabled(slice, true);
-    }
+    uint sliceDrive = PWM_GPIO_SLICE_NUM(MOTOR_L);
+    uint sliceWeapon = PWM_GPIO_SLICE_NUM(WEAPON);
+
+    pwm_set_clkdiv(sliceDrive, divider);
+    pwm_set_wrap(sliceDrive, top);
+    pwm_set_enabled(sliceDrive, true);
+
+    pwm_set_clkdiv(sliceWeapon, divider);
+    pwm_set_wrap(sliceWeapon, top);
+    pwm_set_enabled(sliceWeapon, true);
 
 
     return 0;
