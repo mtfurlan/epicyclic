@@ -17,6 +17,7 @@ add_executable(epicyclic)
 
 target_sources(epicyclic PUBLIC
         src/main.cpp
+        src/pico_crsf.cpp
         )
 
 pico_enable_stdio_usb(epicyclic 1)

@@ -1,9 +1,10 @@
-#include <crsf.h>
+#include "pico_crsf.h"
 
-#include "hardware/clocks.h"
-#include "hardware/pwm.h"
-#include "hardware/watchdog.h"
+
+#include <hardware/clocks.h>
 #include <hardware/gpio.h>
+#include <hardware/pwm.h>
+#include <hardware/watchdog.h>
 #include <pico/binary_info.h>
 #include <pico/stdlib.h>
 
@@ -122,8 +123,6 @@ void cb(const crsf_packet_t* data)
     }
 }
 
-crsf_t c = CRSF_DEFINE();
-
 int my_pwm_init()
 {
     gpio_set_function(MOTOR_L, GPIO_FUNC_PWM);
@@ -186,17 +185,18 @@ int main()
 
     led_init();
 
+    my_pwm_init();
+
+    pico_crsf_init(cb, CRSF_UART_TX, CRSF_UART_RX, uart0, 5);
+
+    my_pwm_init();
+
     if (watchdog_enable_caused_reboot()) {
         gpio_put(LED_R, 0);
     }
 
     watchdog_enable(100, 1);
 
-    gpio_set_function(CRSF_UART_TX, UART_FUNCSEL_NUM(uart0, CRSF_UART_TX));
-    gpio_set_function(CRSF_UART_RX, UART_FUNCSEL_NUM(uart0, CRSF_UART_RX));
-    uart_init(uart0, 416666);
-
-    my_pwm_init();
 
     while (1) {
         watchdog_update();
@@ -205,9 +205,6 @@ int main()
             disarm();
             gpio_put(LED_G, 1);
         }
-        if (uart_is_readable(uart0)) {
-            uint8_t currentByte = uart_getc(uart0);
-            crsf_process(&c, &currentByte, 1, cb);
-        }
+        pico_crsf_process();
     }
 }
