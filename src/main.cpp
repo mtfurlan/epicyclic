@@ -39,83 +39,76 @@ void disarm()
     gpio_put(LED_B, 1);
 }
 
-// https://xiaoxiae.github.io/Robotics-Simplified-Website/drivetrain-control/arcade-drive/
-void doDriving(uint16_t forward_us, uint16_t turn_us, bool flip)
+void doTankDrive(uint16_t l, uint16_t r, bool flipped)
 {
-    // need to have zero centerd shit for this algorithm
-    // we have rc μs
-    int16_t drive = forward_us - 1500;
-    // TODO: inverted?
-    int16_t rotate = -1 * (turn_us - 1500);
-
-
-    uint16_t maximum = std::max(abs(drive), abs(rotate));
-    int16_t total = drive + rotate;
-    int16_t difference = drive - rotate;
-
-    int16_t left = 0;
-    int16_t right = 0;
-
-    if (drive >= 0) {
-        if (rotate >= 0) {
-            left = maximum;
-            right = difference;
-        } else {
-            left = total;
-            right = maximum;
-        }
+    int16_t left = l - 1500;
+    int16_t right = r - 1500;
+    // right is reversed
+    // but I think we reverse it both for flipping reasons or something?
+    right *= -1;
+    if (flipped) {
+        l = right + 1500;
+        r = left + 1500;
     } else {
-        if (rotate >= 0) {
-            left = total;
-            right = -maximum;
-        } else {
-            left = -maximum;
-            right = difference;
-        }
+        l = left + 1500;
+        r = right + 1500;
     }
+    pwm_set_both_levels(pwm_gpio_to_slice_num(MOTOR_L), r, l);
+}
 
-    // TODO flip maybe invert both inputs?
-    if (flip) {
-        left *= -1;
-        right *= -1;
+
+typedef enum { WEAPON_OFF = 0, WEAPON_TRIM, WEAPON_FULL } weapon_mode_e;
+
+int crsf2enum(uint16_t input)
+{
+    // 1000 is 0
+    // 1500 is 1
+    // 2000 is 2
+    if (input < 1250) {
+        return 0;
+    } else if (input < 1750) {
+        return 1;
+    } else {
+        return 2;
     }
-
-    // left is wired backwards
-    left *= -1;
-
-    // convert back to us
-    left += 1500;
-    right += 1500;
-
-
-    //printf("rc input drive: %d, rotat %d\n", forward_us, turn_us);
-    //printf("steering input drive: %d, rotat %d, max %d, total %d, diff %d\n", drive, rotate, maximum, total, difference);
-    //printf("setting motors to L: %d, R: %d\n", left, right);
-
-    pwm_set_both_levels(pwm_gpio_to_slice_num(MOTOR_L), left, right);
 }
 void cb(const crsf_packet_t* data)
 {
     bool armed;
     bool flipped;
-    uint16_t forward;
-    uint16_t turn;
-    uint16_t weapon;
+    weapon_mode_e weapon_mode;
+    uint16_t left;
+    uint16_t right;
+    uint16_t weapon_trim;
 
     switch (data->header.type) {
         case CSRF_FRAMETYPE_RC_CHANNELS_PACKED_PAYLOAD:
             connected_timeout = make_timeout_time_ms(100);
             gpio_put(LED_G, 0);
             armed = CRSF_TICKS_TO_US(data->rc_channels_packed_payload.channel_5) > 1500;
-            flipped = CRSF_TICKS_TO_US(data->rc_channels_packed_payload.channel_6) > 1500;
             if (armed) {
                 gpio_put(LED_B, 0);
-                forward = CRSF_TICKS_TO_US(data->rc_channels_packed_payload.channel_2);
-                weapon = CRSF_TICKS_TO_US(data->rc_channels_packed_payload.channel_3);
-                turn = CRSF_TICKS_TO_US(data->rc_channels_packed_payload.channel_4);
-                doDriving(forward, turn, flipped);
+                left = CRSF_TICKS_TO_US(data->rc_channels_packed_payload.channel_1);
+                right = CRSF_TICKS_TO_US(data->rc_channels_packed_payload.channel_2);
+                weapon_trim = CRSF_TICKS_TO_US(data->rc_channels_packed_payload.channel_3);
+                flipped = CRSF_TICKS_TO_US(data->rc_channels_packed_payload.channel_6) > 1500;
+                weapon_mode = (weapon_mode_e)crsf2enum(
+                        CRSF_TICKS_TO_US(data->rc_channels_packed_payload.channel_6));
 
-                pwm_set_gpio_level(WEAPON, weapon);
+                doTankDrive(left, right, flipped);
+
+                switch (weapon_mode) {
+                    case WEAPON_TRIM:
+                        pwm_set_gpio_level(WEAPON, weapon_trim);
+                        break;
+                    case WEAPON_FULL:
+                        pwm_set_gpio_level(WEAPON, 2012);
+                        break;
+                    default:
+                        pwm_set_gpio_level(WEAPON, 0);
+                        break;
+                }
+
             } else {
                 disarm();
             }
