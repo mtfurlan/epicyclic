@@ -54,7 +54,7 @@ void doTankDrive(uint16_t l, uint16_t r, bool flipped)
         l = left + 1500;
         r = right + 1500;
     }
-    pwm_set_both_levels(pwm_gpio_to_slice_num(MOTOR_L), r, l);
+    pwm_set_both_levels(pwm_gpio_to_slice_num(MOTOR_L), l, r);
 }
 
 
@@ -94,7 +94,7 @@ void cb(const crsf_packet_t* data)
                 weapon_trim = CRSF_TICKS_TO_US(data->rc_channels_packed_payload.channel_3);
                 flipped = CRSF_TICKS_TO_US(data->rc_channels_packed_payload.channel_6) > 1500;
                 weapon_mode = (weapon_mode_e)crsf2enum(
-                        CRSF_TICKS_TO_US(data->rc_channels_packed_payload.channel_6));
+                        CRSF_TICKS_TO_US(data->rc_channels_packed_payload.channel_7));
 
                 doTankDrive(left, right, flipped);
 
@@ -103,10 +103,10 @@ void cb(const crsf_packet_t* data)
                         pwm_set_gpio_level(WEAPON, weapon_trim);
                         break;
                     case WEAPON_FULL:
-                        pwm_set_gpio_level(WEAPON, 2012);
+                        pwm_set_gpio_level(WEAPON, 2000);
                         break;
                     default:
-                        pwm_set_gpio_level(WEAPON, 0);
+                        pwm_set_gpio_level(WEAPON, 1000);
                         break;
                 }
 
