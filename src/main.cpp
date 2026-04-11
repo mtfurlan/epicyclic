@@ -1,3 +1,4 @@
+#include "batt.h"
 #include "pico_crsf.h"
 
 
@@ -14,6 +15,13 @@
 #define LED_G 16
 #define LED_B 25
 
+
+// battery divider of 15kΩ to 5.1kΩ
+// ADC0 is on pin 26
+#define BATT_DIVIDER_GPIO 26
+#define BATT_DIVIDER_ADC  0
+
+float battery_min = 9.9;
 
 // each pwm slice drives 2 pwm channels
 // only B can be input
@@ -32,6 +40,7 @@
 
 
 static absolute_time_t connected_timeout;
+static absolute_time_t battery_read_time;
 
 void disarm()
 {
@@ -223,7 +232,7 @@ int main()
 
     pico_crsf_init(cb, CRSF_UART_TX, CRSF_UART_RX, uart0, 5);
 
-    my_pwm_init();
+    batt_init(BATT_DIVIDER_GPIO, BATT_DIVIDER_ADC);
 
     if (watchdog_enable_caused_reboot()) {
         gpio_put(LED_R, 0);
@@ -240,5 +249,33 @@ int main()
             gpio_put(LED_G, 1);
         }
         pico_crsf_process();
+
+        static uint8_t batt_min_count = 0;
+        if (time_reached(battery_read_time)) {
+            battery_read_time = make_timeout_time_ms(1000);
+            float batt_reading = batt_voltage();
+            printf("battery at %fV\n", batt_reading);
+
+            if (batt_reading <= battery_min) {
+                if(batt_min_count < 3) {
+                    batt_min_count++;
+                } else {
+                    watchdog_disable();
+                    while (batt_reading <= battery_min) {
+                        printf("battery low at %fV, no more movement\n", batt_reading);
+                        disarm();
+                        gpio_put(LED_R, !gpio_get_out_level(LED_R));
+                        sleep_ms(1000);
+                        batt_reading = batt_voltage();
+                    }
+                    printf("battery recovered, at %fV\n", batt_reading);
+                    watchdog_enable(100, 1);
+                    gpio_put(LED_R, 1);
+                    batt_min_count=0;
+                }
+            } else {
+                batt_min_count=0;
+            }
+        }
     }
 }

@@ -186,8 +186,10 @@ typedef struct {
 } PACKED crsf_variometer_sensor_t;
 
 typedef struct {
-    int16_t voltage;             // Voltage (LSB = 10 µV)
-    int16_t current;             // Current (LSB = 10 µA)
+    // TODO: TBS spec says voltage and current are signed?
+    // TODO: TBS spec says 10 μV, other places says dV
+    uint16_t voltage;            // Voltage (LSB = 10 µV)
+    uint16_t current;            // Current (LSB = 10 µA)
     uint32_t capacity_used : 24; // Capacity used (mAh)
     uint8_t remaining;           // Battery remaining (percent)
 } PACKED crsf_battery_sensor_t;
@@ -309,6 +311,7 @@ typedef struct {
 
 // 16 channels packed into 22 bytes. In case of a Failsafe, this frame will no longer be sent (when the failsafe type is set to "cut"). It is recommended to wait for 1 second before starting the FC failsafe routine.
 
+// TODO TBS spec says these are signed
 typedef struct {
     unsigned channel_1  : 11;
     unsigned channel_2  : 11;

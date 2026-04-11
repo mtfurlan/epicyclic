@@ -18,6 +18,7 @@ add_executable(epicyclic)
 target_sources(epicyclic PUBLIC
         src/main.cpp
         src/pico_crsf.cpp
+        src/batt.cpp
         )
 
 pico_enable_stdio_usb(epicyclic 1)
@@ -25,7 +26,7 @@ pico_enable_stdio_uart(epicyclic 1)
 
 pico_add_extra_outputs(epicyclic)
 
-target_link_libraries(epicyclic PUBLIC pico_stdlib hardware_pwm)
+target_link_libraries(epicyclic PUBLIC pico_stdlib hardware_adc hardware_pwm)
 
 
 
